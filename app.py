@@ -1,6 +1,6 @@
 import threading  # スレッド処理用
 import numpy as np
-from PIL import Image, ImageFilter, ImageTk,ImageEnhance,ImageDraw
+from PIL import Image, ImageFilter, ImageEnhance,ImageDraw
 import cv2
 import matplotlib.pyplot as plt
 import math
