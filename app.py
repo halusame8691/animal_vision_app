@@ -720,28 +720,28 @@ st.write("### 動物を選択してください")
 #---上段(４列)
 col1, col2, col3, col4=st.columns(4)
 with col1:
-    if st.button("🐶 犬", use_container_width=True):
+    if st.button("🐶 犬", width="stretch"):# use_container_width=True→width="stretch"
         st.session_state.selected_animal="犬"
 with col2:
-    if st.button("🐱 猫", use_container_width=True):
+    if st.button("🐱 猫", width="stretch"):
         st.session_state.selected_animal="猫"
 with col3:
-    if st.button("🐰 うさぎ", use_container_width=True):
+    if st.button("🐰 うさぎ", width="stretch"):
         st.session_state.selected_animal="うさぎ"
 with col4:
-    if st.button("🐤 鳥", use_container_width=True):
+    if st.button("🐤 鳥", width="stretch"):
         st.session_state.selected_animal="鳥"
 
 #---下段(3列)
 col5, col6, col7=st.columns(3)
 with col5:
-    if st.button("🐹 ハムスター", use_container_width=True):
+    if st.button("🐹 ハムスター", width="stretch"):# use_container_width=True→width="stretch"
         st.session_state.selected_animal="ハムスター"
 with col6:
-    if st.button("🐟 魚", use_container_width=True):
+    if st.button("🐟 魚", width="stretch"):
         st.session_state.selected_animal="魚"
 with col7:
-    if st.button("👤人間", use_container_width=True):
+    if st.button("👤人間", width="stretch"):
         st.session_state.selected_animal="人間"
 
 #現在選択中の動物を表示・確認
@@ -794,11 +794,11 @@ with col_left:
 
         # 3. 画像の表示
         if show_cataract:
-            st.image(cataract_img, caption="白内障フィルター適用", use_container_width=True)
+            st.image(cataract_img, caption="白内障フィルター適用", width="stretch")# use_container_width=True→width="stretch"
         elif show_original:
-            st.image(input_images[0], caption="元画像（人間の視界）", use_container_width=True)
+            st.image(input_images[0], caption="元画像（人間の視界）", width="stretch")
         else:
-            st.image(processed_img, caption=f"{selected_animal}の見え方", use_container_width=True)
+            st.image(processed_img, caption=f"{selected_animal}の見え方", width="stretch")
         
         # 4. 動物の解説を表示（画像のすぐ下に配置！）
         explanation = ANIMAL_EXPLANATIONS.get(selected_animal, "")
