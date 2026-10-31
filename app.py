@@ -399,13 +399,16 @@ def process_bird_vision_flexible(images, is_panorama=False):
         [1.65, -0.2, -0.2],#新しい赤(R)
         [-0.2, 1.65, -0.2],#新しい緑(G)
         [-0.2, -0.2 , 1.65] #新しい青(B)
-    ])
+    ],dtype=np.float32)
 
     for pil_img in images:
         if pil_img is None:
             continue
+        #RGBA(4チャンネル)などの画像を必ずRGB(3チャンネル)にする
+        pil_img_rgb=pil_img.convert('RGB)
+                                    
         #1.Pillowの画像データを、計算用にNumPy配列(0.0〜1.0)に変換
-        img_np=np.array(pil_img).astype(np.float32)/255.0
+        img_np=np.array(pil_img_rgb).astype(np.float32)/255.0
 
         #2.OpenCVの高速変換を使ってカラーマトリックス（引き算）を適用
         processed_img=cv2.transform(img_np, bird_matrix)
