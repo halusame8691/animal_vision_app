@@ -405,7 +405,7 @@ def process_bird_vision_flexible(images, is_panorama=False):
         if pil_img is None:
             continue
         #RGBA(4チャンネル)などの画像を必ずRGB(3チャンネル)にする
-        pil_img_rgb=pil_img.convert('RGB)
+        pil_img_rgb=pil_img.convert('RGB')
                                     
         #1.Pillowの画像データを、計算用にNumPy配列(0.0〜1.0)に変換
         img_np=np.array(pil_img_rgb).astype(np.float32)/255.0
