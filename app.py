@@ -775,7 +775,7 @@ with col_left:
     # 1. ドラッグ＆ドロップ枠
     uploaded_files = st.file_uploader(
         "画像をアップロードしてください",
-        type=["jpg", "jpeg", "png","webp","heic"],
+        type=["jpg", "jpeg", "png","webp"],
         accept_multiple_files=True)
     
     is_panorama=st.checkbox("パノラマ画像ですか？　* **パノラマ画像だと視野範囲も再現できます**")
