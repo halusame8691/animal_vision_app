@@ -1,6 +1,7 @@
 import threading  # スレッド処理用
 import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance,ImageDraw
+import pillow_heif
 import cv2
 import matplotlib.pyplot as plt
 import math
@@ -9,7 +10,7 @@ import streamlit as st
 # ==========================================
 #  画像加工用の関数（フィルター）
 # ==========================================
-
+pillow_heif.register_heif_opener()
 
 def load_input_image(uploaded_file):
     #アップロードされたファイルを１枚のPIL画像として準備する関数
@@ -775,8 +776,9 @@ with col_left:
     # 1. ドラッグ＆ドロップ枠
     uploaded_files = st.file_uploader(
         "画像をアップロードしてください",
-        type=["jpg", "jpeg", "png","webp"],
-        accept_multiple_files=True)
+        type=["jpg", "jpeg", "png","webp","heic","HEIC"],
+        accept_multiple_files=True
+    )
     
     is_panorama=st.checkbox("パノラマ画像ですか？　* **パノラマ画像だと視野範囲も再現できます**")
     
@@ -787,12 +789,12 @@ with col_left:
         input_images = []
         for f in uploaded_files:
             #関数のreturnに合わせて3つの変数で受け取る
-            original_pil, processed_img, cataract_img=process_uploaded_images(uploaded_files, selected_animal)
+            original_pil, processed_img, cataract_img=process_uploaded_images(f, selected_animal)
             if isinstance(f, Image.Image):
                 #すでにImage オブジェクトの場合はそのまま使う
-                input_images.append(f)
+                input_images.append(f.convert("RGB"))
             else:
-                input_images.append(Image.open(f))
+                input_images.append(Image.open(f).convert("RGB"))
 
 
         # 3. 画像の表示
