@@ -10,7 +10,9 @@ import streamlit as st
 # ==========================================
 #  画像加工用の関数（フィルター）
 # ==========================================
+#HEICフォーマットをPillowで扱えるように登録
 pillow_heif.register_heif_opener()
+
 
 def load_input_image(uploaded_file):
     #アップロードされたファイルを１枚のPIL画像として準備する関数
@@ -265,21 +267,21 @@ def process_cat_vision_flexible(images, is_panorama=False):
         is_sky=(is_clear_blue | is_cyan) | is_cyan
         
         #赤い物体の判定
-        is_red=(r > g * 1.25) & (r > b * 1.25) & (~is_neutral)
+        is_red=(r > g * 1.25) & (r > b * 1.25)
         red_to_gray=r * 0.3 + g * 0.6 + b * 0.1
 
         cat_r=np.where(
             is_sky,
-            base_yellow_r * 0.25,
+            base_yellow_r*0.25,
             np.where(
             is_red,
             red_to_gray * 0.7,
-            base_yellow_r * 0.25
+            base_yellow_r,
             ),
         )
         cat_g=np.where(
             is_sky,
-            np.maximum(g * 0.8,base_yellow_g * 0.5),
+            np.maximum(g * 0.8, base_yellow_g * 0.5),
             np.where(
                 is_sky,
                 np.maximum(g * 0.8, base_yellow_g * 0.5),
@@ -287,7 +289,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
             ),
         )
         cat_b=np.where(
-            is_neutral,
+            is_sky,
             b,
             np.minimum(
                 b * 1.1, base_yellow_g * 0.8 + b * 0.3
@@ -302,7 +304,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         cat_r=np.clip(cat_r, 0.0, 255.0)
         cat_g=np.clip(cat_g, 0.0,255.0)
         cat_b=np.clip(cat_b, 0.0, 255.0)
-        
+
         cat_array = np.stack([cat_r, cat_g, cat_b], axis=-1)
         cat_array = np.clip(cat_array, 0, 255).astype(np.uint8)
 
@@ -782,7 +784,7 @@ with col_left:
         "画像をアップロードしてください",
         type=["jpg", "jpeg", "png","webp","heic","HEIC"],
         accept_multiple_files=True
-    )
+        )
     
     is_panorama=st.checkbox("パノラマ画像ですか？　* **パノラマ画像だと視野範囲も再現できます**")
     
@@ -809,7 +811,7 @@ with col_left:
         else:
             st.image(processed_img, caption=f"{selected_animal}の見え方", width="stretch")
         
-        # 4. 動物の解説を表示（画像のすぐ下に配置！）
+        # 4. 動物の解説
         explanation = ANIMAL_EXPLANATIONS.get(selected_animal, "")
         if explanation:
             #explanation内の\nを\n\nに置換して改行を有効化する
