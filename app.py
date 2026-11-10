@@ -256,30 +256,30 @@ def process_cat_vision_flexible(images, is_panorama=False):
 
         #色覚
         red_luminance=r * 0.25
-        base_yellow_r=(r * 0.45 + g * 0.55) + red_luminance
-        base_yellow_g=(r * 0.35 + g * 0.65) + red_luminance
+        base_yellow_r=(r * 0.4 + g * 0.6) + red_luminance
+        base_yellow_g=(r * 0.3 + g * 0.7) + red_luminance
 
         #空・水色領域
         is_clear_blue=(b > r * 1.1) & (b > g * 0.8)
         is_cyan=(b > 100) & (g > 100) & (r < b * 0.85)
-        is_sky=(is_clear_blue | is_cyan) & (~is_neutral)
+        is_sky=(is_clear_blue | is_cyan) | is_cyan
         
         #赤い物体の判定
         is_red=(r > g * 1.25) & (r > b * 1.25) & (~is_neutral)
         red_to_gray=r * 0.3 + g * 0.6 + b * 0.1
 
         cat_r=np.where(
-            is_neutral,
-            r,
-            np.where(
             is_sky,
             base_yellow_r * 0.25,
-            np.where(is_red, red_to_gray * 0.7, base_yellow_r),
+            np.where(
+            is_red,
+            red_to_gray * 0.7,
+            base_yellow_r * 0.25
             ),
         )
         cat_g=np.where(
-            is_neutral,
-            g,
+            is_sky,
+            np.maximum(g * 0.8,base_yellow_g * 0.5),
             np.where(
                 is_sky,
                 np.maximum(g * 0.8, base_yellow_g * 0.5),
@@ -289,16 +289,20 @@ def process_cat_vision_flexible(images, is_panorama=False):
         cat_b=np.where(
             is_neutral,
             b,
-            np.where(
-                is_sky, b * 1.15, np.minimum(b * 1.15, base_yellow_g * 0.8 + b * 0.35)
+            np.minimum(
+                b * 1.1, base_yellow_g * 0.8 + b * 0.3
             ),
         )
         #猫特有の補正
         #彩度を押さえて淡いパステル長にする
-        cat_r=cat_r * 1.3
-        cat_g=cat_g * 1.3
-        cat_b=cat_b * 1.3
+        cat_r=cat_r * 1.35
+        cat_g=cat_g * 1.35
+        cat_b=cat_b * 1.35
 
+        cat_r=np.clip(cat_r, 0.0, 255.0)
+        cat_g=np.clip(cat_g, 0.0,255.0)
+        cat_b=np.clip(cat_b, 0.0, 255.0)
+        
         cat_array = np.stack([cat_r, cat_g, cat_b], axis=-1)
         cat_array = np.clip(cat_array, 0, 255).astype(np.uint8)
 
