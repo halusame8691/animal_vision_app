@@ -1,12 +1,16 @@
 import threading  # スレッド処理用
-import numpy as np
-from PIL import Image, ImageFilter, ImageEnhance,ImageDraw
-import pillow_heif
-import cv2
-import matplotlib.pyplot as plt
 import math
+import numpy as np
+from PIL import Image, ImageFilter, ImageEnhance, ImageDraw
+import pillow_heif
+import matplotlib.pyplot as plt
 import streamlit as st
 
+# OpenCVを安全に読み込む（エラー停止を防止）
+try:
+    import cv2
+except ImportError:
+    pass
 # ==========================================
 #  画像加工用の関数（フィルター）
 # ==========================================
