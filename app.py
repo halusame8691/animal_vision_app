@@ -139,12 +139,12 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         dog_r=np.where(
             is_sky,
             base_yellow_r * 0.25,
-            np.where(is_red, red_to_grey * 0.7, base_yellow_r),
+            np.where(is_red, red_to_grey * 0.7, base_yellow_r)
         )
         dog_g=np.where(
             is_sky,
             np.maximum(g * 0.8, base_yellow_g * 0.5),
-            np.where(is_red, red_to_grey * 0.7, base_yellow_g),
+            np.where(is_red, red_to_grey * 0.7, base_yellow_g)
         )
 
         #青チャンネルは元の鮮やかさと明るさを100％保持
@@ -268,7 +268,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         #空・水色領域
         is_clear_blue=(b > r * 1.1) & (b > g * 0.8)
         is_cyan=(b > 100) & (g > 100) & (r < b * 0.85)
-        is_sky=(is_clear_blue | is_cyan) | is_cyan
+        is_sky=is_clear_blue | is_cyan
         
         #赤い物体の判定
         is_red=(r > g * 1.25) & (r > b * 1.25)
@@ -280,8 +280,8 @@ def process_cat_vision_flexible(images, is_panorama=False):
             np.where(
             is_red,
             red_to_gray * 0.7,
-            base_yellow_r,
-            ),
+            base_yellow_r
+            )
         )
         cat_g=np.where(
             is_sky,
@@ -289,15 +289,15 @@ def process_cat_vision_flexible(images, is_panorama=False):
             np.where(
                 is_sky,
                 np.maximum(g * 0.8, base_yellow_g * 0.5),
-                np.where(is_red, red_to_gray * 0.7, base_yellow_g),
-            ),
+                np.where(is_red, red_to_gray * 0.7, base_yellow_g)
+            )
         )
         cat_b=np.where(
             is_sky,
             b,
             np.minimum(
                 b * 1.1, base_yellow_g * 0.8 + b * 0.3
-            ),
+            )
         )
         #猫特有の補正
         #彩度を押さえて淡いパステル長にする
