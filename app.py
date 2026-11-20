@@ -32,9 +32,7 @@ def load_input_image(uploaded_file):
     return images
 
 def apply_fov_mask(images, fov_degrees, max_fov=360):
-    """
-    画像に対して指定された視野角(fov_degrees)以外の左右領域を黒くマスクする
-    """
+    #画像に対して指定された視野角(fov_degrees)以外の左右領域を黒くマスクする
     if fov_degrees>=max_fov:
         return images #ほぼ全集見える場合は加工なし
     width, height=images.size
@@ -70,11 +68,10 @@ def dog_vision_filter_flexible(images, is_panorama=False):
     #画像をnumpy配列にする
     img_array=np.array(wide_img, dtype=float)
     # 2. 画像全体の平均の明るさ（輝度）を計算する
-    #    R, G, Bの平均値を出すことで、簡易的に明るさを計算できます
-    mean_brightness = np.mean(img_array)
+    mean_brightness=np.mean(img_array)
     
-    # 基準となる明るさ（この数値を調整して感度を変えられます）
-    THRESHOLD = 30.0 
+    # 基準となる明るさ（この数値を調整して感度を変更）
+    THRESHOLD=30.0 
 
     if mean_brightness<THRESHOLD:
         # ----------------------------------------
@@ -85,11 +82,11 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         blur_array = np.array(img_blur, dtype=float)
         
         # ② 光を増幅させる（明るさを1.4倍にする）
-        # ※ 255を超えないように後で調整します
+        # ※255を超えないように後で調整
         night_array = blur_array * 1.4 
         
-        # ③ 色を抜き、緑っぽくする（暗視スコープのような表現）
-        # モノクロ（輝度）を計算し、それをベースに緑（G）だけを強めにする
+        # ③ 色を抜く
+        # モノクロ（輝度）を計算
         gray = 0.4 * night_array[:,:,0] + 0.7 * night_array[:,:,1] + 0.3 * night_array[:,:,2]
         
         dog_r = gray * 0.94 
@@ -102,8 +99,6 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         # ==================================================
         # （前後のコード、ぼかし処理などはそのまま）
         # ① 少しだけぼかす
-        #img_blur = wide_img.filter(ImageFilter.GaussianBlur(radius=4.5))
-        #blur_array = np.array(img_blur, dtype=float)
         img_array=np.array(wide_img, dtype=float)
 
         r = img_array[:, :, 0]
@@ -114,14 +109,14 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         #赤を明るさとして還元する処理の強化
         red_luminance=r * 0.25
         #黄色〜緑ベース
-        base_yellow_r=r*0.4 + g*0.6 + red_luminance
-        base_yellow_g=r*0.3 + g * 0.7 + red_luminance
+        base_yellow_r=r * 0.4 + g * 0.6 + red_luminance
+        base_yellow_g=r * 0.3 + g * 0.7 + red_luminance
 
         #青・水色の厳密判定(「青が明確に強い」または「青と緑が両方高く赤が低い」領域のみ)
         #これにより、白い壁やグレーの物体が誤って青判定されるのを防ぐ
-        is_clear_blue=(b>r*1.1)&(b>g*0.8)
-        is_cyan=(b>100)&(g>100)&(r<b*0.85)#水色(空や水面)
-        is_sky=is_clear_blue |is_cyan
+        is_clear_blue=(b > r * 1.1)&(b > g * 0.8)
+        is_cyan=(b > 100) & (g > 100)&(r < b * 0.85)#水色(空や水面)
+        is_sky=is_clear_blue|is_cyan
 
         
         
@@ -129,7 +124,7 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         #緑や黄色は明るいまま保ち。赤(Rが高くGやBが低い)だけをグレー(輝度)に置き換える
         is_red=(r > g * 1.25)&(r > b * 1.25)
         #赤い物体の輝度
-        red_to_grey=(r*0.3 + g * 0.6 + b * 0.1) 
+        red_to_grey=(r * 0.3 + g * 0.6 + b * 0.1) 
 
 
         #修正３判定に応じてチャンネルごとに色を設定
@@ -148,7 +143,7 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         )
 
         #青チャンネルは元の鮮やかさと明るさを100％保持
-        dog_b=np.where(is_sky, b ,np.minimum(b*1.1,base_yellow_g*0.8 + b*0.3))
+        dog_b=np.where(is_sky, b,np.minimum(b * 1.1, base_yellow_g * 0.8 + b * 0.3))
 
         #全体明度を1.2倍に持ち上げ(明るさ補正)
         dog_r=dog_r * 1.2
@@ -171,8 +166,8 @@ def dog_vision_filter_flexible(images, is_panorama=False):
         #-======================
         # 【書き換え後】上下でぼかしの強さを変える処理
         # 1. 手前用（強）と奥用（弱）の2つのぼかし画像を作成
-        img_blur_strong = dog_image.filter(ImageFilter.GaussianBlur(radius=1.1))  # 手前（下）
-        img_blur_weak   = dog_image.filter(ImageFilter.GaussianBlur(radius=10.0))  # 奥（上）
+        img_blur_strong = dog_image.filter(ImageFilter.GaussianBlur(radius=1.1))# 手前（下）
+        img_blur_weak = dog_image.filter(ImageFilter.GaussianBlur(radius=10.0))# 奥（上）
 
         # 2. 上から下へ変化するグラデーションマスクを作成
         width, height = dog_image.size
@@ -181,7 +176,7 @@ def dog_vision_filter_flexible(images, is_panorama=False):
 
         for y in range(height):
             progress=y/height
-            alpha = int((progress ** 3) * 255)  # 上:0(黒/弱) 〜 下:255(白/強)
+            alpha = int((progress ** 3) * 255)# 上:0(黒/弱) 〜 下:255(白/強)
             draw.line([(0, y), (width, y)], fill=alpha)
 
         # 3. マスクを使って合成し、変数名を合わせる
@@ -212,20 +207,20 @@ def process_cat_vision_flexible(images, is_panorama=False):
         wide_img=apply_fov_mask(images, fov_degrees=260)
     else:
         wide_img=images
-  
+        
     #画像が暗いかどうかを自動判定し、猫の視覚（昼・夜）を切り替える関数
-   
+
     # 1. 画像をNumPyの配列（小数型）にする
     img_array = np.array(wide_img, dtype=float)
-    
+
     # 2. 画像全体の平均の明るさ（輝度）を計算する
-    #    R, G, Bの平均値を出すことで、簡易的に明るさを計算できます
+    # R, G, Bの平均値を出すことで、簡易的に明るさを計算できます
     mean_brightness = np.mean(img_array)
     
     # 基準となる明るさ（この数値を調整して感度を変えられます）
     THRESHOLD = 30.0 
 
-        # 3. 【条件分岐】暗い画像かどうかの判定
+    # 3. 【条件分岐】暗い画像かどうかの判定
     if mean_brightness < THRESHOLD:
         # ----------------------------------------
         # 🌙 【夜・暗視モード】の処理
@@ -233,15 +228,15 @@ def process_cat_vision_flexible(images, is_panorama=False):
         # ① 猫の夜の視界に合わせて少し強めにぼかす
         img_blur = wide_img.filter(ImageFilter.GaussianBlur(radius=5))
         blur_array = np.array(img_blur, dtype=float)
-        
+
         # ② 光を増幅させる（一例として明るさを1.8倍にする）
         # ※ 255を超えないように後で調整します
         night_array = blur_array * 1.5 
 
         # モノクロ（輝度）を計算
         gray = 0.4 * night_array[:,:,0] + 0.7 * night_array[:,:,1] + 0.3 * night_array[:,:,2]
-        
-        cat_r = gray * 1.31 
+
+        cat_r = gray * 1.35
         cat_g = gray * 1.35 
         cat_b = gray * 1.35  
         
@@ -249,7 +244,6 @@ def process_cat_vision_flexible(images, is_panorama=False):
         # ----------------------------------------
         # ☀️ 【昼・通常モード】の処理
         # ----------------------------------------
-        # ① 少しだけぼかす
         img_array = np.array(wide_img, dtype=float)
         
         r = img_array[:, :, 0]
@@ -261,7 +255,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         is_neutral=(rgb_max - rgb_min) < 30
 
         #色覚
-        red_luminance=r * 0.25
+        red_luminance= r * 0.25
         base_yellow_r=(r * 0.4 + g * 0.6) + red_luminance
         base_yellow_g=(r * 0.3 + g * 0.7) + red_luminance
 
@@ -276,28 +270,18 @@ def process_cat_vision_flexible(images, is_panorama=False):
 
         cat_r=np.where(
             is_sky,
-            base_yellow_r*0.25,
-            np.where(
-            is_red,
-            red_to_gray * 0.7,
-            base_yellow_r
-            )
+            base_yellow_r * 0.25,
+            np.where(is_red, red_to_gray * 0.7 , base_yellow_r)
         )
         cat_g=np.where(
             is_sky,
             np.maximum(g * 0.8, base_yellow_g * 0.5),
-            np.where(
-                is_sky,
-                np.maximum(g * 0.8, base_yellow_g * 0.5),
-                np.where(is_red, red_to_gray * 0.7, base_yellow_g)
-            )
+            np.where(is_sky, np.maximum(g * 0.8, base_yellow_g * 0.5), np.where(is_red, red_to_gray * 0.7, base_yellow_g))
         )
         cat_b=np.where(
             is_sky,
             b,
-            np.minimum(
-                b * 1.1, base_yellow_g * 0.8 + b * 0.3
-            )
+            np.minimum(b * 1.1, base_yellow_g * 0.8 + b * 0.3)
         )
         #猫特有の補正
         #彩度を押さえて淡いパステル長にする
@@ -306,7 +290,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         cat_b=cat_b * 1.35
 
         cat_r=np.clip(cat_r, 0.0, 255.0)
-        cat_g=np.clip(cat_g, 0.0,255.0)
+        cat_g=np.clip(cat_g, 0.0, 255.0)
         cat_b=np.clip(cat_b, 0.0, 255.0)
 
         cat_array = np.stack([cat_r, cat_g, cat_b], axis=-1)
@@ -321,7 +305,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         # 【書き換え後】上下でぼかしの強さを変える処理
         # 1. 手前用（強）と奥用（弱）の2つのぼかし画像を作成
         img_blur_strong = cat_image.filter(ImageFilter.GaussianBlur(radius=1.1))  # 手前（下）
-        img_blur_weak   = cat_image.filter(ImageFilter.GaussianBlur(radius=10.0))  # 奥（上）
+        img_blur_weak = cat_image.filter(ImageFilter.GaussianBlur(radius=10.0))  # 奥（上）
 
         # 2. 上から下へ変化するグラデーションマスクを作成
         width, height = cat_image.size
@@ -388,12 +372,8 @@ def process_rabbit_vision_flexible(images, is_panorama=False):
 #とりの視点
 #===========================================
 def process_bird_vision_flexible(images, is_panorama=False):
-    """
-    鳥の視覚(油滴フィルターによる超鮮明な色覚)を再現する関数。
-    images:1枚のPIL Image,または複数のPIL Imageが入ったリスト
-    """    
-
-            #画像の＆受け取りとパラノマの視覚処理を入れる
+    #鳥の視覚(油滴フィルターによる超鮮明な色覚)を再現する関数。
+    
     if is_panorama:
         wide_img=apply_fov_mask(images, fov_degrees=300)
     else:
@@ -470,13 +450,13 @@ def process_hamster_vision_flexible(images, is_panorama=False):
         # ※ 255を超えないように後で調整します
         night_array = blur_array * 1.8 
         
-        # ③ 色を抜き、緑っぽくする（暗視スコープのような表現）
-        # モノクロ（輝度）を計算し、それをベースに緑（G）だけを強めにする
+        # ③ 色を抜く
+        # モノクロ（輝度）を計算
         gray = 0.4 * night_array[:,:,0] + 0.7 * night_array[:,:,1] + 0.3 * night_array[:,:,2]
         
-        hamster_r = gray * 0.94  # 赤
+        hamster_r = gray * 0.94 # 赤
         hamster_g = gray * 0.94 # 緑
-        hamster_b = gray * 0.94  # 青
+        hamster_b = gray * 0.94 # 青
 
     else:
         # ==================================================
@@ -490,8 +470,8 @@ def process_hamster_vision_flexible(images, is_panorama=False):
         g = img_array[:, :, 1]
         b = img_array[:, :, 2]
 
-        #輝度(人間の近くに近い標準的な明るさを計算)
-        gray=0.299 *r + 0.587 * g + 0.114 * b
+        #輝度(人間に近い標準的な明るさを計算)
+        gray=0.299 * r + 0.587 * g + 0.114 * b
 
         # ② ハムスターの色覚計算（赤と緑の区別が苦手な特性）
         hamster_r = 0.85 * gray + 0.15 * r
@@ -598,10 +578,7 @@ def process_fish_vision_flexible(images, is_panorama=False):
 #白内障ボタン
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def apply_cataract_to_animal_vision(animal_pil_img):
-    """
-    すでに動物の視覚処理（色覚調整・魚眼加工など）が施された画像に対し、
-    さらに白内障（水晶体の濁り・くすみ）の効果を重ねがけする関数
-    """
+    #すでに動物の視覚処理（色覚調整・魚眼加工など）が施された画像に対し、さらに白内障（水晶体の濁り・くすみ）の効果を重ねがけする関数
     #①輪郭をぼかす(ピンと低下)
     blurred=animal_pil_img.filter(ImageFilter.GaussianBlur(radius=5.0))
 
@@ -614,7 +591,7 @@ def apply_cataract_to_animal_vision(animal_pil_img):
     cataract_img=enhancer_bright.enhance(1.1)
 
     #④ほんのり全体を白・黄色っぽく膜を張る処理(NumPy)
-    img_array=np.array(cataract_img,dtype=np.float32)
+    img_array=np.array(cataract_img, dtype=np.float32)
 
     #赤と緑のチャンネルを少し持ち上げて、「白濁・黄濁」を表現
     img_array[:,:,0]=np.clip(img_array[:,:,0]*1.05+10,0,255)#Red
@@ -629,9 +606,8 @@ def apply_cataract_to_animal_vision(animal_pil_img):
 # 動物切り替えボタン（「魚」「犬」「猫」など）が押されたタイミングで以下を実行
 
 def update_animal_mode(selected_animal):
-    """
-    動物が選択されたときに、正常時画像と白内障画像を両方更新する
-    """
+    #動物が選択されたときに、正常時画像と白内障画像を両方更新する
+    
     global photo_processed,photo_cataract,image_label,original_pil
 
     #original_pilがまだ読み込まれていない場合の安全装置
@@ -785,7 +761,7 @@ with col_right:
 with col_left:
     # 1. ドラッグ＆ドロップ枠
     uploaded_files = st.file_uploader(
-        "画像をアップロードしてください",
+        "画像をドラッグ＆ドロップしてください",
         type=["jpg", "jpeg", "png","webp","heic","HEIC"],
         accept_multiple_files=True
         )
