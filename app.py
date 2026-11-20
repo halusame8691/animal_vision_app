@@ -623,6 +623,10 @@ def update_animal_mode(selected_animal):
          current_pil=process_rabbit_vision_flexible(original_pil)
     elif selected_animal=="鳥":
          current_pil=process_bird_vision_flexible(original_pil)
+    elif selected_animal=="ハムスター":
+        current_pil=process_hamster_vision_flexible(original_pil)
+    elif selected_animal=="魚":
+        current_pil=process_fish_vision_flexible(original_pil)
     else:
         current_pil=original_pil
     
