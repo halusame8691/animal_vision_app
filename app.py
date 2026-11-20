@@ -321,9 +321,10 @@ def process_cat_vision_flexible(images, is_panorama=False):
         cat_image_blur = Image.composite(img_blur_strong, img_blur_weak, mask)
 
         cat_array=np.array(cat_image_blur)
-        cat_r=np.clip(cat_array[:,:,0])
-        cat_g=np.clip(cat_array[:,:,1])
-        cat_b=np.clip(cat_array[:,:,2])
+        # ★修正①：0, 255 を追加
+        cat_r=np.clip(cat_array[:,:,0], 0, 255)
+        cat_g=np.clip(cat_array[:,:,1], 0, 255)
+        cat_b=np.clip(cat_array[:,:,2], 0, 255)
 
 
     # 4. 仕上げ（数値を0〜255に収めて画像に戻す：前回と同じ共通処理）
@@ -374,13 +375,9 @@ def process_rabbit_vision_flexible(images, is_panorama=False):
 def process_bird_vision_flexible(images, is_panorama=False):
     #鳥の視覚(油滴フィルターによる超鮮明な色覚)を再現する関数。
     
-    if is_panorama:
-        wide_img=apply_fov_mask(images, fov_degrees=300)
-    else:
-        wide_img=images
-
-    if not isinstance(wide_img,list):
-        images=[wide_img]
+    # ★修正②：リストか単体かを先に揃えてからパノラマ処理をかける
+    if not isinstance(images, list):
+        images = [images]
 
     processed_list=[]
 
@@ -395,6 +392,9 @@ def process_bird_vision_flexible(images, is_panorama=False):
     for pil_img in images:
         if pil_img is None:
             continue
+        if is_panorama:
+            pil_img = apply_fov_mask(pil_img, fov_degrees=300)
+
         #RGBA(4チャンネル)などの画像を必ずRGB(3チャンネル)にする
         pil_img_rgb=pil_img.convert('RGB')
                                     
@@ -498,7 +498,7 @@ def process_fish_vision_flexible(images, is_panorama=False):
         wide_img=images
     
     #====================================================--
-    #ステップ２　色覚調整＆ぼかし
+    #ステップ２ 色覚調整＆ぼかし
     #======================================================
     
     #画像をnumpy配列にする
@@ -522,11 +522,11 @@ def process_fish_vision_flexible(images, is_panorama=False):
     fish_img=fish_img.filter(ImageFilter.GaussianBlur(radius=4.3))
 
     #================================-
-    #ステップ３　魚眼の歪み加工(NumPy一括ベクトル化)
+    #ステップ３ 魚眼の歪み加工(NumPy一括ベクトル化)
     #================================-
     img_w, img_h=fish_img.size
-    #ガラスボールの大きさ
-    glassD=400#ガラスボールの直径
+    #ガラスボールの大きさ（★修正③：画像が400未満の時は画像サイズに収める）
+    glassD=min(400, img_w, img_h) #ガラスボールの直径
     r_val=glassD/2.0    #ガラスボールの半径
 
     #ガラスボールの加工に使う変数
@@ -632,8 +632,8 @@ def update_animal_mode(selected_animal):
     return current_pil, cataract_pil
     
 
-
-def process_uploaded_images(file_path, selected_animal):
+# ★修正④：引数を uploaded_files に統一（RGB変換も追加して透過PNG等でのエラーを防止）
+def process_uploaded_images(uploaded_files, selected_animal):
     # ==================================================
     # 1. 前処理：1枚でも2枚でも、自動的に開いてデータにする
     # ==================================================
@@ -642,11 +642,11 @@ def process_uploaded_images(file_path, selected_animal):
     
     if isinstance(uploaded_files, list):
         if len(uploaded_files)==1:
-            img_input=Image.open(uploaded_files[0])
+            img_input=Image.open(uploaded_files[0]).convert("RGB")
         else:
-            img_input=[Image.open(f) for f in uploaded_files]
+            img_input=[Image.open(f).convert("RGB") for f in uploaded_files]
     else:
-        img_input=Image.open(uploaded_files)
+        img_input=Image.open(uploaded_files).convert("RGB")
 
     # ==================================================
     # 2. 条件分岐：犬も猫も全く同じように引き渡す
@@ -689,12 +689,12 @@ def process_uploaded_images(file_path, selected_animal):
 #============================================
 ANIMAL_EXPLANATIONS={
     "人間":"**【ひとの視覚🔍】**\n**・視力**:1.0~2.0\n**・視野**:180~200°(子供は90°程度)。\n**・色覚**:赤・青・黄色の三色\n**・暗視**:あり(桿体細胞・暗順応)",
-    "犬":"**【いぬの視覚🔍】**\n**・視力**:0.2~0.3(ほぼぼやけている)\n**・視野**:240~270°\n**・色覚**:青と黄色のグラデーション\n　　　(赤や緑はグレーや黄色のように見える)\n**・暗視**:あり\n　　　(タペタム層という、夜でも光を反射して物を見ることが\n　　　できる層がある)\n**・その他**:ある説では犬は紫外線を見ることができるという話や、\n　　　　鳥が持っているとされる磁気センサー(クリプトクローム)\n　　　　があるので、遠くからでも家に帰ってくることができる\n　　　　という話もある。",
-    "猫":"**【ねこの視覚🔍】**\n**・視力**:0.1~0.2(ほぼぼやけている)\n**・視野**:200~280°\n**・色覚**:青と緑のグラデーション(赤はグレーのようにみえる。)\n**・暗視**:あり(タペタム層という層があり、星明かり\n　　  　程度の光で鮮明に周囲を見ること\n　　  　ができます。また、薄明視もあります",
+    "犬":"**【いぬの視覚🔍】**\n**・視力**:0.2~0.3(ほぼぼやけている)\n**・視野**:240~270°\n**・色覚**:青と黄色のグラデーション\n   (赤や緑はグレーや黄色のように見える)\n**・暗視**:あり\n   (タペタム層という、夜でも光を反射して物を見ることが\n   できる層がある)\n**・その他**:ある説では犬は紫外線を見ることができるという話や、\n    鳥が持っているとされる磁気センサー(クリプトクローム)\n    があるので、遠くからでも家に帰ってくることができる\n    という話もある。",
+    "猫":"**【ねこの視覚🔍】**\n**・視力**:0.1~0.2(ほぼぼやけている)\n**・視野**:200~280°\n**・色覚**:青と緑のグラデーション(赤はグレーのようにみえる。)\n**・暗視**:あり(タペタム層という層があり、星明かり\n     程度の光で鮮明に周囲を見ること\n     ができます。また、薄明視もあります",
     "うさぎ":"**【うさぎの視覚🔍】**\n・**視力**:0.05〜0.1\n**・視野**:355°（鼻の下と真後ろ以外）。\n**・色覚**:青と緑のグラデーション(赤はグレーのように見える。)\n**・暗視**:あり(薄明薄暮性)",
-    "鳥":"**【鳥の視覚🔍】** *特にカナリヤ、インコ、文鳥\n**・視力**:2.0~4.0(はやぶさは8.0)\n**・視野**:300°(立体視は苦手)\n**・色覚**:赤・青・黄色+紫外線\n**・暗視**:なし\n**・その他**:クリプトクロームという磁場を感じるセンサー\n　　　　があります。(利用例:伝書鳩での情報伝達)",
-    "ハムスター":"**【ハムスターの視覚🔍】**\n**・視力**:0.01\n**・視野**:270°\n**・色覚**:青、緑の二色(赤や黄色はグレーで、視界はほぼ白黒)\n**・暗視**:あり(網膜の97％が光を感じる「桿体細胞」で、薄暗い場所\n　　　でもよく見えます。なので、強い光はストレスの原因になっ\n　　　てしまいます。",
-    "魚":"**【魚の視覚🔍】**\n**・視力**:0.1~0.4°\n**・視野**:320°\n**・色覚**:赤・青・緑(浅い場所に住んでいる魚は一部紫外線も\n　　　見ることができる。)\n・**その他**:水中から水面を通して陸上まで見えており、\n　　　　この現象を「フィッシュウィンドウ」と言います。\n　　　　振動や水流を感知する「側線」という感覚\n　　　　があり、赤・橙・黄色が鈍いと言われています。"
+    "鳥":"**【鳥の視覚🔍】** *特にカナリヤ、インコ、文鳥\n**・視力**:2.0~4.0(はやぶさは8.0)\n**・視野**:300°(立体視は苦手)\n**・色覚**:赤・青・黄色+紫外線\n**・暗視**:なし\n**・その他**:クリプトクロームという磁場を感じるセンサー\n    があります。(利用例:伝書鳩での情報伝達)",
+    "ハムスター":"**【ハムスターの視覚🔍】**\n**・視力**:0.01\n**・視野**:270°\n**・色覚**:青、緑の二色(赤や黄色はグレーで、視界はほぼ白黒)\n**・暗視**:あり(網膜の97％が光を感じる「桿体細胞」で、薄暗い場所\n   でもよく見えます。なので、強い光はストレスの原因になっ\n   てしまいます。",
+    "魚":"**【魚の視覚🔍】**\n**・視力**:0.1~0.4°\n**・視野**:320°\n**・色覚**:赤・青・緑(浅い場所に住んでいる魚は一部紫外線も\n   見ることができる。)\n・**その他**:水中から水面を通して陸上まで見えており、\n    この現象を「フィッシュウィンドウ」と言います。\n    振動や水流を感知する「側線」という感覚\n    があり、赤・橙・黄色が鈍いと言われています。"
 }#\はoptionキー+¥
 
 # ==========================================
@@ -766,9 +766,9 @@ with col_left:
         accept_multiple_files=True
         )
     
-    is_panorama=st.checkbox("パノラマ画像ですか？　* **パノラマ画像だと視野範囲も再現できます**")
+    is_panorama=st.checkbox("パノラマ画像ですか？ * **パノラマ画像だと視野範囲も再現できます**")
     
-        #関数を通して「１枚にまとめられた加工済み画像」を取得
+    #関数を通して「１枚にまとめられた加工済み画像」を取得
     selected_animal = st.session_state.selected_animal
     
     if uploaded_files:
