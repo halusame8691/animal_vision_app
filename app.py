@@ -1,16 +1,13 @@
-import threading  # スレッド処理用
-import math
 import numpy as np
 from PIL import Image, ImageFilter, ImageEnhance, ImageDraw
 import pillow_heif
-import matplotlib.pyplot as plt
 import streamlit as st
 
 # OpenCVを安全に読み込む（エラー停止を防止）
 try:
     import cv2
 except ImportError:
-    pass
+    cv2=None
 # ==========================================
 #  画像加工用の関数（フィルター）
 # ==========================================
@@ -252,7 +249,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         
         rgb_max=np.maximum(r, np.maximum(g,b))
         rgb_min=np.minimum(r, np.minimum(g,b))
-        is_neutral=(rgb_max - rgb_min) < 30
+        #is_neutral=(rgb_max - rgb_min) < 30
 
         #色覚
         red_luminance= r * 0.25
@@ -276,7 +273,7 @@ def process_cat_vision_flexible(images, is_panorama=False):
         cat_g=np.where(
             is_sky,
             np.maximum(g * 0.8, base_yellow_g * 0.5),
-            np.where(is_sky, np.maximum(g * 0.8, base_yellow_g * 0.5), np.where(is_red, red_to_gray * 0.7, base_yellow_g))
+            np.where(is_red, red_to_gray * 0.7, base_yellow_g)
         )
         cat_b=np.where(
             is_sky,
@@ -321,9 +318,9 @@ def process_cat_vision_flexible(images, is_panorama=False):
         cat_image_blur = Image.composite(img_blur_strong, img_blur_weak, mask)
 
         cat_array=np.array(cat_image_blur)
-        cat_r=np.clip(cat_array[:,:,0])
-        cat_g=np.clip(cat_array[:,:,1])
-        cat_b=np.clip(cat_array[:,:,2])
+        cat_r=np.clip(cat_array[:,:,0], 0, 255)
+        cat_g=np.clip(cat_array[:,:,1], 0, 255)
+        cat_b=np.clip(cat_array[:,:,2], 0, 255)
 
 
     # 4. 仕上げ（数値を0〜255に収めて画像に戻す：前回と同じ共通処理）
@@ -381,6 +378,7 @@ def process_bird_vision_flexible(images, is_panorama=False):
 
     if not isinstance(wide_img,list):
         images=[wide_img]
+        wide_img=wide_img.convert("RGB")
 
     processed_list=[]
 
@@ -526,7 +524,7 @@ def process_fish_vision_flexible(images, is_panorama=False):
     #================================-
     img_w, img_h=fish_img.size
     #ガラスボールの大きさ
-    glassD=400#ガラスボールの直径
+    glassD=min(400, img_w,img_h)#ガラスボールの直径
     r_val=glassD/2.0    #ガラスボールの半径
 
     #ガラスボールの加工に使う変数
@@ -578,6 +576,7 @@ def process_fish_vision_flexible(images, is_panorama=False):
 #白内障ボタン
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def apply_cataract_to_animal_vision(animal_pil_img):
+    animal_pil_img = animal_pil_img.convert("RGB")
     #すでに動物の視覚処理（色覚調整・魚眼加工など）が施された画像に対し、さらに白内障（水晶体の濁り・くすみ）の効果を重ねがけする関数
     #①輪郭をぼかす(ピンと低下)
     blurred=animal_pil_img.filter(ImageFilter.GaussianBlur(radius=5.0))
@@ -637,7 +636,7 @@ def update_animal_mode(selected_animal):
     
 
 
-def process_uploaded_images(file_path, selected_animal):
+def process_uploaded_images(uploaded_files, selected_animal, is_panorama=False):
     # ==================================================
     # 1. 前処理：1枚でも2枚でも、自動的に開いてデータにする
     # ==================================================
@@ -779,7 +778,7 @@ with col_left:
         input_images = []
         for f in uploaded_files:
             #関数のreturnに合わせて3つの変数で受け取る
-            original_pil, processed_img, cataract_img=process_uploaded_images(f, selected_animal)
+            original_pil, processed_img, cataract_img=process_uploaded_images(uploaded_files, selected_animal,is_panorama)
             if isinstance(f, Image.Image):
                 #すでにImage オブジェクトの場合はそのまま使う
                 input_images.append(f.convert("RGB"))
